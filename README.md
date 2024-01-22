@@ -20,3 +20,6 @@
 
 8) Запустить сервер api
 ```uvicorn main:app --reload```
+
+
+#### Для удобства ссылка на видео с процессом развёртки : https://www.youtube.com/watch?v=ZPjzYYM_Iuo
