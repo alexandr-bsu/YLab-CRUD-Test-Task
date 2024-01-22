@@ -16,8 +16,8 @@ def generate_query_list_menu():
     query = select(Menu.id,
                    Menu.title,
                    Menu.description,
-                   func.count(distinct(submenu.id)),
-                   func.count(Dish.id)) \
+                   func.count(distinct(submenu.id)).label('submenus_count'),
+                   func.count(Dish.id).label('dishes_count')) \
         .outerjoin(submenu, Menu.id == submenu.parent_menu_id) \
         .outerjoin(Dish, Dish.menu_id == submenu.id) \
         .group_by(Menu.id)
@@ -32,7 +32,7 @@ def generate_query_list_submenu(parent_menu_id):
     query = select(Menu.id,
                    Menu.title,
                    Menu.description,
-                   func.count(Dish.id)) \
+                   func.count(Dish.id).label('dishes_count')) \
         .outerjoin(Dish, Dish.menu_id == Menu.id) \
         .filter(Menu.parent_menu_id == parent_menu_id) \
         .group_by(Menu.id)

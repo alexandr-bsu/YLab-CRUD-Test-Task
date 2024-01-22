@@ -9,18 +9,22 @@ async def create_menu(menu: MenuSchema, is_root=True, parent_menu_id=None):
     async with async_session() as session:
         query = insert(Menu) \
             .values(**menu.model_dump(), is_root=is_root, parent_menu_id=parent_menu_id) \
-            .returning(Menu.id, Menu.title, Menu.description, literal_column('0'), literal_column('0'))
+            .returning(Menu.id,
+                       Menu.title,
+                       Menu.description,
+                       literal_column('0').label('submenus_count'),
+                       literal_column('0').label('dishes_count'))
 
         menu_db = await session.execute(query)
         await session.commit()
-        return menu_db.one()
+        return menu_db.mappings().one()
 
 
 async def list_menu():
     async with async_session() as session:
         query = generate_query_list_menu()
         result = await session.execute(query)
-        return result.all()
+        return result.mappings().all()
 
 
 async def get_menu(id):
@@ -28,7 +32,7 @@ async def get_menu(id):
         query = generate_query_list_menu().filter(Menu.id == id)
         try:
             result = await session.execute(query)
-            return result.one()
+            return result.mappings().one()
         except NoResultFound as ex:
             raise HTTPException(status_code=404, detail="menu not found")
 
@@ -42,7 +46,7 @@ async def list_submenu(parent_menu_id):
 
         query = generate_query_list_submenu(parent_menu_id)
         result = await session.execute(query)
-        return result.all()
+        return result.mappings().all()
 
 
 async def get_submenu(submenu_id, menu_id):
@@ -53,7 +57,7 @@ async def get_submenu(submenu_id, menu_id):
 
             query = generate_query_list_submenu(menu_id).filter(Menu.id == submenu_id)
             result = await session.execute(query)
-            return result.one()
+            return result.mappings().one()
 
         except NoResultFound:
             raise HTTPException(status_code=404, detail='submenu not found')

@@ -19,7 +19,7 @@ async def create_dish(dish: DishSchema, menu_id):
 
         dish_db = await session.execute(query)
         await session.commit()
-        return dish_db.one()
+        return dish_db.mappings().one()
 
 
 async def list_dish(menu_id):
@@ -31,7 +31,7 @@ async def list_dish(menu_id):
 
         query = select(Dish.id, Dish.title, Dish.description, Dish.price).filter_by(menu_id=menu_id)
         dishes = await session.execute(query)
-        return dishes.all()
+        return dishes.mappings().all()
 
 
 async def get_dish(id):
@@ -39,7 +39,7 @@ async def get_dish(id):
         try:
             query = select(Dish.id, Dish.title, Dish.description, Dish.price).filter_by(id=id)
             dishes = await session.execute(query)
-            return dishes.one()
+            return dishes.mappings().one()
         except NoResultFound:
             raise HTTPException(detail='dish not found', status_code=404)
 
@@ -57,7 +57,7 @@ async def update_dish(id, dish_data: DishUpdateSchema):
 
         dish_db = await session.execute(query)
         await session.commit()
-        return dish_db.one()
+        return dish_db.mappings().one()
 
 
 async def delete_dish(id):
