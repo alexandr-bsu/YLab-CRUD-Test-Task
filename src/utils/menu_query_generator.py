@@ -1,7 +1,7 @@
-from sqlalchemy import select, func, distinct
+from sqlalchemy import select, func, distinct, literal_column
 from sqlalchemy.orm import aliased
-from database.models.Dish import Dish
-from database.models.Menu import Menu
+from models.dish import Dish
+from models.menu import Menu
 
 
 def generate_query_list_menu():
@@ -13,18 +13,19 @@ def generate_query_list_menu():
     # GROUP BY menu.id
 
     submenu = aliased(Menu)
-    query = select(Menu.id,
-                   Menu.title,
-                   Menu.description,
-                   func.count(distinct(submenu.id)).label('submenus_count'),
-                   func.count(Dish.id).label('dishes_count')) \
-        .outerjoin(submenu, Menu.id == submenu.parent_menu_id) \
-        .outerjoin(Dish, Dish.menu_id == submenu.id) \
-        .group_by(Menu.id)
+    query = (select(Menu.id,
+                    Menu.title,
+                    Menu.description,
+                    func.count(distinct(submenu.id)).label('submenus_count'),
+                    func.count(Dish.id).label('dishes_count'))
+             .outerjoin(submenu, Menu.id == submenu.parent_id)
+             .outerjoin(Dish, Dish.menu_id == submenu.id)
+             .filter(Menu.parent_id == None)
+             .group_by(Menu.id))
     return query
 
 
-def generate_query_list_submenu(parent_menu_id):
+def generate_query_list_submenu(parent_id):
     # SELECT menu.id, menu.title, menu.description, COUNT(dish.id) FROM menu
     # LEFT OUTER JOIN dish ON menu.id = dish.menu_id
     # GROUP BY menu.id
@@ -34,7 +35,7 @@ def generate_query_list_submenu(parent_menu_id):
                    Menu.description,
                    func.count(Dish.id).label('dishes_count')) \
         .outerjoin(Dish, Dish.menu_id == Menu.id) \
-        .filter(Menu.parent_menu_id == parent_menu_id) \
+        .filter(Menu.parent_id == parent_id) \
         .group_by(Menu.id)
 
     return query

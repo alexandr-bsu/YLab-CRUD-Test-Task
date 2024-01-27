@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+from enum import Enum
 import os
 
 DOTENV = os.path.join(os.path.dirname(__file__), ".env")
@@ -18,11 +19,18 @@ class DbSettings(BaseSettings):
     def DB_URL_PSYCOPG(self):
         return f'postgresql+psycopg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}'
 
-    model_config = SettingsConfigDict(env_file=DOTENV)
+    model_config = SettingsConfigDict(env_file=DOTENV, extra='ignore')
 
 
+# Режимы работы приложения
+class Mode(Enum):
+    DEV = 'DEV'
+    TEST = 'TEST'
 class Settings(BaseSettings):
     db: DbSettings = DbSettings()
+    MODE: Mode
+
+    model_config = SettingsConfigDict(env_file=DOTENV, extra='ignore')
 
 
 settings = Settings()

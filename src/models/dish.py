@@ -1,7 +1,9 @@
 from sqlalchemy import ForeignKey, text
 from sqlalchemy.orm import Mapped, mapped_column
-from ..engine import Base
-from uuid import uuid4, UUID
+from database import Base
+from schemas.dish import DishResponseSchema
+from uuid import UUID
+
 
 class Dish(Base):
     __tablename__ = 'dish'
@@ -11,3 +13,11 @@ class Dish(Base):
     title: Mapped[str]
     description: Mapped[str]
     price: Mapped[str]
+
+    def to_read_model(self):
+        return DishResponseSchema(
+            id=self.id,
+            title=self.title,
+            description=self.description,
+            price=self.price
+        )

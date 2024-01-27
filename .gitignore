@@ -1,6 +1,9 @@
+
 /venv/
-/.env
 /.__pycache__/
 /.idea/
 __pycache__/config.cpython-311.pyc
+*.pyc!/.pytest_cache/
 *.pyc
+!/src/.test.env
+!/src/.env

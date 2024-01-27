@@ -12,6 +12,7 @@ def partial_model(model: Type[BaseModel]):
         new.default = default
         new.annotation = Optional[field.annotation]  # type: ignore
         return new.annotation, new
+
     return create_model(
         f'Partial{model.__name__}',
         __base__=model,
@@ -21,3 +22,5 @@ def partial_model(model: Type[BaseModel]):
             for field_name, field_info in model.model_fields.items()
         }
     )
+
+
