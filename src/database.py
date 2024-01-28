@@ -2,9 +2,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.orm import DeclarativeBase
 from config import settings
 
-
 async_engine = create_async_engine(settings.db.DB_URL_ASYNCPG, echo=True)
 async_session = async_sessionmaker(async_engine, expire_on_commit=False)
+
+
 class Base(AsyncAttrs, DeclarativeBase):
     repr_cols_num = 6
     repr_cols = tuple()
@@ -17,6 +18,7 @@ class Base(AsyncAttrs, DeclarativeBase):
                 cols.append(f"{col}={getattr(self, col)}")
 
         return f"<{self.__class__.__name__} {', '.join(cols)}>"
+
 
 async def init_db():
     async with async_engine.connect() as conn:

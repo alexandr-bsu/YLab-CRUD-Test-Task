@@ -3,7 +3,15 @@ from pydantic import Field
 from enum import Enum
 import os
 
-DOTENV = os.path.join(os.path.dirname(__file__), ".env")
+
+DOCKER_MODE = os.getenv("MODE")
+
+if DOCKER_MODE == 'DEV':
+    DOTENV = os.path.join(os.path.dirname(__file__), ".env")
+
+if DOCKER_MODE == 'TEST':
+    DOTENV = os.path.join(os.path.dirname(__file__), ".test.env")
+
 class DbSettings(BaseSettings):
     DB_HOST: str = Field(default='localhost')
     DB_PORT: int = Field(default=5432)
@@ -26,6 +34,7 @@ class DbSettings(BaseSettings):
 class Mode(Enum):
     DEV = 'DEV'
     TEST = 'TEST'
+
 class Settings(BaseSettings):
     db: DbSettings = DbSettings()
     MODE: Mode
