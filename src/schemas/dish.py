@@ -28,9 +28,8 @@ class DishSchema(BaseModel):
         """
         model_dict = self.model_dump()
         for field in fields:
-            if model_dict.get(field, None) != other.get(field, None):
+            if model_dict.get(field) != other.get(field):
                 return False
-
             return True
 class DishResponseSchema(DishSchema):
     id: UUID

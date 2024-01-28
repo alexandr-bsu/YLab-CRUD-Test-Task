@@ -9,7 +9,7 @@ import asyncio
 # fix problem "different event loop"
 # more about problem: https://github.com/pytest-dev/pytest-asyncio/issues/38
 # https://github.com/pytest-dev/pytest-asyncio/issues/207?ysclid=lrvse25g7y347904505
-@pytest.yield_fixture(scope='session', autouse=True)
+@pytest.fixture(scope='session', autouse=True)
 def event_loop(request):
     """Create an instance of the default event loop for each test case."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
@@ -55,7 +55,8 @@ def update_submenu():
 def post_dish_1():
     return {
         'title': 'Dish 1',
-        'description': 'Dish 1 description'
+        'description': 'Dish 1 description',
+        'price': '25.80'
     }
 
 
@@ -63,7 +64,8 @@ def post_dish_1():
 def update_dish_1():
     return {
         'title': 'Updated dish 1',
-        'description': 'Updated dish 1 description'
+        'description': 'Updated dish 1 description',
+        'price': '40.30'
     }
 
 
@@ -71,7 +73,8 @@ def update_dish_1():
 def post_dish_2():
     return {
         'title': 'Dish 2',
-        'description': 'Dish 2 description'
+        'description': 'Dish 2 description',
+        'price': '560.00'
     }
 
 
@@ -79,11 +82,12 @@ def post_dish_2():
 def update_dish_2():
     return {
         'title': 'Updated dish 2',
-        'description': 'Updated dish 2 description'
+        'description': 'Updated dish 2 description',
+        'price': '570.00'
     }
 
 
-# Хранит данные в сессии (аналог environment в postman)
+# Хранит данные в тест-сессии (аналог environment в postman)
 @pytest.fixture(scope='session')
 def session_storage():
     return {}

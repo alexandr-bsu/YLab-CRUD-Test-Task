@@ -1,4 +1,4 @@
-from src.schemas.menu import MenuSchema, MenuUpdateSchema
+from src.schemas.menu import MenuSchema, MenuUpdateSchema, MenuResponseSchema
 from httpx import AsyncClient
 from main import app
 import pytest
@@ -24,13 +24,12 @@ class TestSubmenu:
 
     async def test_create_submenu(self, post_submenu, session_storage):
         async with AsyncClient(app=app, base_url="http://test") as ac:
-            submenu = MenuSchema(**post_submenu)
-            payload = submenu.model_dump()
-            payload['menu_id'] = session_storage["menu"]["id"]
-            response = await ac.post(f'/menus/{session_storage["menu"]["id"]}/submenus/', json=payload)
+            payload = MenuSchema(**post_submenu, parent_id=session_storage["menu"]["id"])
+            response = await ac.post(f'/menus/{session_storage["menu"]["id"]}/submenus/',
+                                     json=payload.model_dump())
 
             assert response.status_code == 201
-            assert submenu.compare_fields(response.json(), ['title', 'description'])
+            assert payload.compare_fields(response.json(), ['title', 'description'])
 
             session_storage['submenu'] = response.json()
 
@@ -47,7 +46,7 @@ class TestSubmenu:
                 f'/menus/{session_storage["menu"]["id"]}/submenus/{session_storage["submenu"]["id"]}')
 
             assert response.status_code == 200
-            assert MenuSchema(**session_storage['submenu']).compare_fields(response.json(),
+            assert MenuResponseSchema(**session_storage['submenu']).compare_fields(response.json(),
                                                                            fields=['title', 'description']) == True
 
     async def test_update_submenu(self, update_submenu, session_storage):
@@ -68,7 +67,7 @@ class TestSubmenu:
             )
 
             assert response.status_code == 200
-            assert MenuSchema(**session_storage['submenu']).compare_fields(response.json(),
+            assert MenuResponseSchema(**session_storage['submenu']).compare_fields(response.json(),
                                                                            fields=['title', 'description']) == True
 
     async def test_delete_submenu(self, session_storage):

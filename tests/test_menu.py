@@ -1,4 +1,4 @@
-from src.schemas.menu import MenuSchema, MenuUpdateSchema
+from src.schemas.menu import MenuSchema, MenuUpdateSchema, MenuResponseSchema
 from httpx import AsyncClient
 from main import app
 import pytest
@@ -34,7 +34,7 @@ class TestMenu:
             response = await ac.get(f"/menus/{session_storage['menu']['id']}")
 
             assert response.status_code == 200
-            assert MenuSchema(**session_storage['menu']).compare_fields(response.json(),
+            assert MenuResponseSchema(**session_storage['menu']).compare_fields(response.json(),
                                                                         fields=['title', 'description']) == True
 
     async def test_update_existing_menu(self, update_menu, session_storage):
@@ -52,7 +52,7 @@ class TestMenu:
             response = await ac.get(f"/menus/{session_storage['menu']['id']}")
 
             assert response.status_code == 200
-            assert MenuSchema(**session_storage['menu']).compare_fields(response.json(),
+            assert MenuResponseSchema(**session_storage['menu']).compare_fields(response.json(),
                                                                         fields=['title', 'description']) == True
 
     async def test_delete_menu(self, session_storage):
