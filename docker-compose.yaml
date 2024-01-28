@@ -32,3 +32,15 @@ services:
     depends_on:
       - db
 
+  pytest:
+    build:
+      context: .
+    env_file:
+      - src/.env
+    container_name: ylab_api_pytest
+    command: [ "/fastapi_app/docker/pytest.sh" ]
+
+    depends_on:
+      - db
+      - app_test
+

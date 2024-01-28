@@ -5,6 +5,7 @@ import os
 
 
 DOCKER_MODE = os.getenv("MODE")
+DOTENV = os.path.join(os.path.dirname(__file__), ".env")
 
 if DOCKER_MODE == 'DEV':
     DOTENV = os.path.join(os.path.dirname(__file__), ".env")
