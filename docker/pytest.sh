@@ -1,2 +1,2 @@
 #!/bin/bash
-pytest
+sh -c "pytest -v"

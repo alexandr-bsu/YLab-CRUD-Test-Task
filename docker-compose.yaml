@@ -53,15 +53,3 @@ services:
         condition: service_healthy
 
 
-  pytest:
-    build:
-      context: .
-    env_file:
-      - .test.env
-    container_name: ylab_api_pytest
-    command: [ "/fastapi_app/docker/pytest.sh" ]
-
-    depends_on:
-      db_test:
-        condition: service_healthy
-

@@ -1,0 +1,12 @@
+version: "2.24.0"
+services:
+
+  pytest:
+    build:
+      context: .
+    container_name: pytest
+    ports:
+      - "8000:80"
+    env_file:
+      - .test.env
+    command: sh -c "pytest -v"
