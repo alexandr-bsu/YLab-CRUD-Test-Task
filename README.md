@@ -11,7 +11,7 @@
 
 4. Запустить команды в корневой папке проекта
      1. ```docker compose build```
-     2. ``` docker compose -f docker-compose-test.yaml```
+     2. ``` docker compose -f docker-compose-test.yaml build```
 
 5. Поднять контейнеры  ```docker compose up -d``` <br>
    Чтобы прекратить работу контейнеров воспользуйтесь командой ```docker compose down```
