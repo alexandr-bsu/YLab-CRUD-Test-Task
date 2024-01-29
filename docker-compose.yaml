@@ -5,11 +5,10 @@ services:
     container_name: db_ylab_api_prod
     env_file:
       - .prod.env
-    command: -p ${DB_PORT_PROD}
     ports:
-      - ${DB_PORT_PROD}:${DB_PORT_PROD}
+      - ${DB_PORT_PROD}:5432
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready",  "-d",  "${DB_NAME_PROD}",  "-U" , "${POSTGRES_USER}", '-p', '${DB_PORT_PROD}' ]
+      test: [ "CMD-SHELL", "pg_isready",  "-d",  "${DB_NAME_PROD}",  "-U" , "${POSTGRES_USER_PROD}" ]
       interval: 10s
       timeout: 30s
       retries: 5
@@ -20,12 +19,9 @@ services:
     env_file:
       - .test.env
     ports:
-      - ${DB_PORT_TEST}:${DB_PORT_TEST}
-    command: -p ${DB_PORT_TEST}
-    expose:
-      - ${DB_PORT_TEST}
+      - ${DB_PORT_TEST}:5432
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready",  "-d",  "${DB_NAME_TEST}",  "-U" , "${POSTGRES_USER}", '-p', '${DB_PORT_TEST}' ]
+      test: [ "CMD-SHELL", "pg_isready",  "-d",  "${DB_NAME_TEST}",  "-U" , "${POSTGRES_USER_TEST}"]
       interval: 10s
       timeout: 30s
       retries: 5
@@ -55,6 +51,20 @@ services:
     depends_on:
       db_test:
         condition: service_healthy
+
+
+  pytest:
+    build:
+      context: .
+    env_file:
+      - .test.env
+    container_name: ylab_api_pytest
+    command: [ "/fastapi_app/docker/pytest.sh" ]
+
+    depends_on:
+      db_test:
+        condition: service_healthy
+
 
 
 
