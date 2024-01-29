@@ -6,10 +6,9 @@ import pytest
 
 @pytest.mark.usefixtures('init_db_fixture')
 class TestMenu:
-    async def test_list_empty_menu(self):
+    async def test_list_empty_menu(self, menu_services):
         async with AsyncClient(app=app, base_url="http://test") as ac:
             response = await ac.get("/menus/")
-
             assert response.status_code == 200
             assert response.json() == []
 
