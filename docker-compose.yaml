@@ -2,45 +2,59 @@ version: "2.24.0"
 services:
   db:
     image: postgres:15.1-alpine
-    container_name: db_ylab_api
+    container_name: db_ylab_api_prod
     env_file:
-      - src/.no-dev.env
+      - .prod.env
+    command: -p ${DB_PORT_PROD}
     ports:
-      - 5432:5432
+      - ${DB_PORT_PROD}:${DB_PORT_PROD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready",  "-d",  "${DB_NAME_PROD}",  "-U" , "${POSTGRES_USER}", '-p', '${DB_PORT_PROD}' ]
+      interval: 10s
+      timeout: 30s
+      retries: 5
 
-  app_test:
-    build:
-      context: .
+  db_test:
+    image: postgres:15.1-alpine
+    container_name: db_ylab_api_test
     env_file:
-      - src/.no-dev-test.env
-    container_name: ylab_api_test
-    command: ["/fastapi_app/docker/app_test.sh"]
+      - .test.env
     ports:
-      - 9876:8765
-    depends_on:
-      - db
+      - ${DB_PORT_TEST}:${DB_PORT_TEST}
+    command: -p ${DB_PORT_TEST}
+    expose:
+      - ${DB_PORT_TEST}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready",  "-d",  "${DB_NAME_TEST}",  "-U" , "${POSTGRES_USER}", '-p', '${DB_PORT_TEST}' ]
+      interval: 10s
+      timeout: 30s
+      retries: 5
 
   app:
     build:
       context: .
     env_file:
-      - src/.no-dev.env
+      - .prod.env
     container_name: ylab_api_prod
     command: [ "/fastapi_app/docker/app.sh" ]
     ports:
       - 9000:8000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
-  pytest:
+  app_test:
     build:
       context: .
     env_file:
-      - src/.no-dev-test.env
-    container_name: ylab_api_pytest
-    command: [ "/fastapi_app/docker/pytest.sh" ]
-
+      - .test.env
+    container_name: ylab_api_test
+    command: [ "/fastapi_app/docker/app_test.sh" ]
+    ports:
+      - 9876:8765
     depends_on:
-      - db
-      - app_test
+      db_test:
+        condition: service_healthy
+
+
 

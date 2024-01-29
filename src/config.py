@@ -5,13 +5,15 @@ import os
 
 
 DOCKER_MODE = os.getenv("MODE")
-DOTENV = os.path.join(os.path.dirname(__file__), ".env")
+DOTENV = os.path.join(os.path.dirname(__file__), "../.prod.env")
 
 if DOCKER_MODE == 'DEV':
-    DOTENV = os.path.join(os.path.dirname(__file__), ".env")
+    DOTENV = os.path.join(os.path.dirname(__file__), "../.prod.env")
 
 if DOCKER_MODE == 'TEST':
-    DOTENV = os.path.join(os.path.dirname(__file__), ".test.env")
+    DOTENV = os.path.join(os.path.dirname(__file__), "../.test.env")
+
+
 
 class DbSettings(BaseSettings):
     DB_HOST: str = Field(default='localhost')
