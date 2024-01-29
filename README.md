@@ -18,7 +18,7 @@
    
 ### Команда запуска тестов 
 1. ```Открыть корневую папку в терминале```
-2. Выполнить ```docker compose -f docker-compose-test.yaml up && docker compose -f docker-compose-test down```
+2. Выполнить ```docker compose -f docker-compose-test.yaml up && docker compose -f docker-compose-test.yaml down```
 
 
 ### По поводу задания 2.3
