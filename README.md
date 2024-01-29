@@ -9,13 +9,17 @@
      - ```.test.env``` - Данные для подключения к тестовой БД
      - ```.prod.env``` - Данные для подключения к проду БД
 
-4. Поднять контейнеры  ```docker compose up``` <br>
+4. Запустить команды в корневой папке проекта
+     1. ```docker compose build```
+     2. ``` docker compose -f docker-compose-test.yaml```
+
+5. Поднять контейнеры  ```docker compose up -d``` <br>
    Чтобы прекратить работу контейнеров воспользуйтесь командой ```docker compose down```
    
 ### Команда запуска тестов 
 1. ```Открыть корневую папку в терминале```
-2. ```docker compose start pytest``` - запускает тесты
-3. ```docker compose logs -f pytest``` - показывает результаты тестирований за всё время
+2. Выполнить ```docker compose -f docker-compose-test.yaml up && docker compose -f docker-compose-test down```
+
 
 ### По поводу задания 2.3
 ORM запрос на получения меню и подменю находятся в файле ```src/menu_query_generator.py``` и используются в ```src/menu_repo.py``` и ```src/submenu_repo.py```
