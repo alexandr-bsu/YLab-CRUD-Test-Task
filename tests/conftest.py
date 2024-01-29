@@ -6,25 +6,6 @@ from httpx import AsyncClient
 from database import init_db
 import asyncio
 
-from services.menu import MenuServices
-from services.submenu import SubmenuServices
-from services.dish import DishServices
-
-from repositories.menu import MenuRepository
-from repositories.submenu import SubmenuRepository
-from repositories.dish import DishRepository
-
-@pytest.fixture(scope="session")
-async def dish_services():
-    yield DishServices(DishRepository())
-
-@pytest.fixture(scope="session")
-async def menu_services():
-    yield MenuServices(MenuRepository())
-
-@pytest.fixture(scope="session")
-async def submenu_services():
-    yield SubmenuServices(SubmenuRepository())
 
 # fix problem "different event loop"
 # more about problem: https://github.com/pytest-dev/pytest-asyncio/issues/38

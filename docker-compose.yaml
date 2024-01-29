@@ -65,6 +65,3 @@ services:
       db_test:
         condition: service_healthy
 
-
-
-
