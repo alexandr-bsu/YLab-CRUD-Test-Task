@@ -34,7 +34,7 @@ services:
     container_name: ylab_api_prod
     command: [ "/fastapi_app/docker/app.sh" ]
     ports:
-      - 9000:8000
+      - 8000:8000
     depends_on:
       db:
         condition: service_healthy
@@ -47,7 +47,7 @@ services:
     container_name: ylab_api_test
     command: [ "/fastapi_app/docker/app_test.sh" ]
     ports:
-      - 9876:8765
+      - 8001:8765
     depends_on:
       db_test:
         condition: service_healthy
