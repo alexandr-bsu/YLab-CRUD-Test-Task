@@ -11,7 +11,3 @@ services:
     env_file:
       - .test.env
     command: sh -c "pytest -v"
-
-
-
-
