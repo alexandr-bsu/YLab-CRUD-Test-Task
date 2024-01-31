@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: pytest
     ports:
-      - "8000:80"
+      - "8002:80"
     env_file:
       - .test.env
     command: sh -c "pytest -v"
