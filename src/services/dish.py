@@ -2,6 +2,8 @@ from utils.repository import AbstractRepository
 from schemas.dish import *
 from fastapi.exceptions import HTTPException
 from repositories.submenu import SubmenuRepository
+from sqlalchemy.exc import NoResultFound
+
 
 
 class DishServices:
@@ -36,7 +38,7 @@ class DishServices:
             dish_dict = data.model_dump()
             dish = await self.dish_repo.update(dish_id, dish_dict)
             return DishResponseSchema(**dish)
-        except IndexError:
+        except NoResultFound:
             raise HTTPException(status_code=404, detail='dish not found')
 
     async def delete(self, dish_id):
@@ -45,3 +47,11 @@ class DishServices:
                 "status": True,
                 "message": "The dish has been deleted"
             }
+
+
+    async def delete_all(self):
+        self.dish_repo.delete_all()
+        return {
+            "status": True,
+            "message": "All dishes have been deleted"
+        }

@@ -18,3 +18,5 @@ class MenuSqlAlchemyRepository(SqlAlchemyRepository):
         await super().update(id, data)
         return await self.find(id)
 
+
+

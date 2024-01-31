@@ -1,97 +1,182 @@
 from src.schemas.dish import DishSchema, DishUpdateSchema, DishResponseSchema
 from src.schemas.menu import MenuSchema
+from httpx import AsyncClient
+from main import app
 import pytest
-from fastapi.exceptions import HTTPException
 
 
 @pytest.mark.usefixtures('init_db_fixture')
 class TestDish:
-    async def test_create_menu(self, menu_services, post_menu, session_storage):
-        payload = MenuSchema(**post_menu)
-        response = await menu_services.create(payload)
-        assert payload.compare_fields(response.model_dump(), ['title', 'description']) == True
-        session_storage['menu'] = response.model_dump()
+    async def test_create_menu(self, post_menu, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            payload = MenuSchema(**post_menu)
+            response = await ac.post("/menus/", json=payload.model_dump())
 
-    async def test_create_submenu(self, submenu_services, post_submenu, session_storage):
-        payload = MenuSchema(**post_submenu)
-        response = await submenu_services.create(session_storage["menu"]["id"], payload)
-        assert payload.compare_fields(response.model_dump(), ['title', 'description'])
-        session_storage['submenu'] = response.model_dump()
+            assert response.status_code == 201
+            assert payload.compare_fields(response.json(), ['title', 'description']) == True
+            session_storage['menu'] = response.json()
 
-    async def test_list_empty_dishes(self, dish_services, session_storage):
-        response = await dish_services.find_all(session_storage['submenu']['id'])
-        assert response == []
+    async def test_create_submenu(self, post_submenu, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            payload = MenuSchema(**post_submenu, parent_id=session_storage["menu"]["id"])
+            response = await ac.post(f'/menus/{session_storage["menu"]["id"]}/submenus/',
+                                     json=payload.model_dump())
 
-    async def test_create_dish(self, dish_services, post_dish_1, session_storage):
-        payload = DishSchema(**post_dish_1)
-        response = await dish_services.create(session_storage['menu']['id'], session_storage['submenu']['id'], payload)
-        assert payload.compare_fields(response.model_dump(), ['title', 'description', 'price'])
-        session_storage['dish'] = response.model_dump()
+            assert response.status_code == 201
+            assert payload.compare_fields(response.json(), ['title', 'description'])
 
-    async def test_list_dishes_after_create(self, dish_services, session_storage):
-        response = await dish_services.find_all(session_storage['submenu']['id'])
-        assert response != []
+            session_storage['submenu'] = response.json()
 
-    async def test_get_dish(self, dish_services, session_storage):
-        response = await dish_services.find(session_storage['submenu']['id'], session_storage['dish']['id'])
-        assert DishResponseSchema(**session_storage['dish']).compare_fields(response.model_dump(),
-                                                                            fields=['title', 'description',
-                                                                                    'price']) == True
+    async def test_list_empty_dishes(self, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.get(
+                f'/menus/{session_storage["menu"]["id"]}'
+                f'/submenus/{session_storage["submenu"]["id"]}'
+                f'/dishes/'
+            )
 
-    async def test_update_dish(self, dish_services, update_dish_1, session_storage):
-        payload = DishUpdateSchema(**update_dish_1)
-        response = await dish_services.update(session_storage['dish']['id'], payload)
-        assert payload.compare_fields(response.model_dump(), ['title', 'description', 'price']) == True
-        session_storage['dish'] = response.model_dump()
+            assert response.status_code == 200
+            assert response.json() == []
 
-    async def test_get_dish_after_update(self, dish_services, session_storage):
-        response = await dish_services.find(session_storage['submenu']['id'], session_storage['dish']['id'])
-        assert DishResponseSchema(**session_storage['dish']).compare_fields(response.model_dump(),
-                                                                                fields=['title', 'description',
-                                                                                        'price']) == True
+    async def test_create_dish(self, post_dish_1, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            payload = DishSchema(**post_dish_1, menu_id=session_storage["submenu"]["id"])
+            response = await ac.post(
+                f'/menus/{session_storage["menu"]["id"]}'
+                f'/submenus/{session_storage["submenu"]["id"]}'
+                f'/dishes/',
+                json=payload.model_dump()
+            )
 
-    async def test_delete_dish(self, dish_services, session_storage):
-        response = await dish_services.delete(session_storage['dish']['id'])
-        assert response == {
-            "status": True,
-            "message": "The dish has been deleted"
-        }
+            assert response.status_code == 201
+            assert payload.compare_fields(response.json(), ['title', 'description', 'price'])
 
-        session_storage['dish']['id'] = '00000000-0000-0000-0000-000000000000'
+            session_storage['dish'] = response.json()
 
-    async def test_list_dishes_after_delete(self, dish_services, session_storage):
-        response = await dish_services.find_all(session_storage['submenu']['id'])
-        assert response == []
+    async def test_list_dishes_after_create(self, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.get(
+                f'/menus/{session_storage["menu"]["id"]}'
+                f'/submenus/{session_storage["submenu"]["id"]}'
+                f'/dishes/'
+            )
 
-    async def test_get_dish_after_delete(self, dish_services, session_storage):
-        try:
-            response = await dish_services.find(session_storage['submenu']['id'], session_storage['dish']['id'])
-            assert False
-        except HTTPException as exc:
-            assert exc.detail == 'dish not found'
+            assert response.status_code == 200
+            assert response.json() != []
 
-    async def test_delete_submenu(self, submenu_services, session_storage):
-        response = await submenu_services.delete(session_storage['submenu']['id'])
-        assert response == {
-            "status": True,
-            "message": "The submenu has been deleted"
-        }
+    async def test_get_dish(self, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.get(
+                f'/menus/{session_storage["menu"]["id"]}'
+                f'/submenus/{session_storage["submenu"]["id"]}'
+                f'/dishes/{session_storage["dish"]["id"]}')
 
-        session_storage['submenu']['id'] = '00000000-0000-0000-0000-000000000000'
+            assert response.status_code == 200
+            assert DishResponseSchema(**session_storage['dish']).compare_fields(response.json(),
+                                                                        fields=['title', 'description',
+                                                                                'price']) == True
 
-    async def test_list_submenus_after_delete(self, submenu_services, session_storage):
-        response = await submenu_services.find_all(session_storage['menu']['id'])
-        assert response == []
+    async def test_update_dish(self, update_dish_1, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            payload = DishUpdateSchema(**update_dish_1)
+            response = await ac.patch(
+                f"/menus/{session_storage['menu']['id']}"
+                f"/submenus/{session_storage['submenu']['id']}"
+                f"/dishes/{session_storage['dish']['id']}",
+                json=payload.model_dump())
 
-    async def test_delete_menu(self, menu_services, session_storage):
-        response = await menu_services.delete(session_storage['menu']['id'])
-        assert response == {
-            "status": True,
-            "message": "The menu has been deleted"
-        }
+            assert response.status_code == 200
+            assert payload.compare_fields(response.json(), ['title', 'description', 'price']) == True
+            session_storage['dish'] = response.json()
 
-        session_storage['menu']['id'] = '00000000-0000-0000-0000-000000000000'
+    async def test_get_dish_after_update(self, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.get(
+                f'/menus/{session_storage["menu"]["id"]}'
+                f'/submenus/{session_storage["submenu"]["id"]}'
+                f'/dishes/{session_storage["dish"]["id"]}')
 
-    async def test_list_empty_menu_after_delete(self, menu_services):
-        response = await menu_services.find_all()
-        assert response == []
+            assert response.status_code == 200
+            assert DishResponseSchema(**session_storage['dish']).compare_fields(response.json(),
+                                                                        fields=['title', 'description',
+                                                                                'price']) == True
+
+    async def test_delete_dish(self, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.delete(
+                f"/menus/{session_storage['menu']['id']}"
+                f"/submenus/{session_storage['submenu']['id']}"
+                f"/dishes/{session_storage['dish']['id']}"
+            )
+
+            assert response.status_code == 200
+            assert response.json() == {
+                "status": True,
+                "message": "The dish has been deleted"
+            }
+
+            session_storage['dish']['id'] = '00000000-0000-0000-0000-000000000000'
+
+    async def test_list_dishes_after_delete(self, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.get(
+                f"/menus/{session_storage['menu']['id']}"
+                f"/submenus/{session_storage['submenu']['id']}"
+                f"/dishes/"
+            )
+
+            assert response.status_code == 200
+            assert response.json() == []
+
+    async def test_get_dish_after_delete(self, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.get(
+                f'/menus/{session_storage["menu"]["id"]}'
+                f'/submenus/{session_storage["submenu"]["id"]}'
+                f'/dishes/{session_storage["dish"]["id"]}')
+
+            assert response.status_code == 404
+            assert response.json() == {'detail': 'dish not found'}
+
+    async def test_delete_submenu(self, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.delete(
+                f"/menus/{session_storage['menu']['id']}/submenus/{session_storage['submenu']['id']}"
+            )
+
+            assert response.status_code == 200
+            assert response.json() == {
+                "status": True,
+                "message": "The submenu has been deleted"
+            }
+
+            session_storage['submenu']['id'] = '00000000-0000-0000-0000-000000000000'
+
+    async def test_list_submenus_after_delete(self, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.get(f'/menus/{session_storage["menu"]["id"]}/submenus/')
+
+            assert response.status_code == 200
+            assert response.json() == []
+
+    async def test_delete_menu(self, session_storage):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.delete(f"/menus/{session_storage['menu']['id']}")
+
+            assert response.status_code == 200
+            assert response.json() == {
+                "status": True,
+                "message": "The menu has been deleted"
+            }
+
+            session_storage['menu']['id'] = '00000000-0000-0000-0000-000000000000'
+
+    async def test_list_empty_menu_after_delete(self):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.get("/menus/")
+
+            assert response.status_code == 200
+            assert response.json() == []
+
+
+

@@ -25,6 +25,10 @@ class AbstractRepository(ABC):
     async def delete(self, id):
         raise NotImplemented
 
+    @abstractmethod
+    async def delete_all(self):
+        raise NotImplemented
+
 
 class SqlAlchemyRepository(AbstractRepository):
     model = None
@@ -58,5 +62,13 @@ class SqlAlchemyRepository(AbstractRepository):
     async def delete(self, id):
         async with async_session() as session:
             stmt = delete(self.model).filter_by(id=id)
+            await session.execute(stmt)
+            await session.commit()
+
+    async def delete_all(self):
+
+        async with async_session() as session:
+            stmt = delete(self.model)
+            print("The menu has been deleted")
             await session.execute(stmt)
             await session.commit()

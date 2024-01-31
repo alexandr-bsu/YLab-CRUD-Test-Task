@@ -24,6 +24,7 @@ async def menu_services():
 async def submenu_services():
     yield SubmenuServices(SubmenuRepository())
 
+
 # fix problem "different event loop"
 # more about problem: https://github.com/pytest-dev/pytest-asyncio/issues/38
 # https://github.com/pytest-dev/pytest-asyncio/issues/207?ysclid=lrvse25g7y347904505
@@ -33,6 +34,7 @@ def event_loop(request):
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+
 @pytest.fixture(scope="session", autouse=True)
 async def init_db_fixture():
     assert settings.MODE == Mode.TEST

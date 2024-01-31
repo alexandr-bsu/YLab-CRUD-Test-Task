@@ -1,75 +1,160 @@
 from src.schemas.menu import MenuSchema, MenuUpdateSchema, MenuResponseSchema
+from httpx import AsyncClient
+from main import app
 from fastapi.exceptions import HTTPException
+from sqlalchemy.exc import IntegrityError
 import pytest
+from uuid import UUID
 
 
 @pytest.mark.usefixtures('init_db_fixture')
 class TestSubmenu:
-    async def test_create_menu(self, menu_services, post_menu, session_storage):
-        payload = MenuSchema(**post_menu)
-        response = await menu_services.create(payload)
-        assert payload.compare_fields(response.model_dump(), ['title', 'description']) == True
-        session_storage['menu'] = response.model_dump()
+    async def test_list_empty_submenus(self, post_menu, menu_services):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            await menu_services.delete_all()
+            menu_db = await menu_services.create(MenuSchema(**post_menu))
+            response = await ac.get(f'/menus/{menu_db.id}/submenus/')
 
-    async def test_list_empty_submenus(self, submenu_services, session_storage):
-        response = await submenu_services.find_all(session_storage['menu']['id'])
-        assert response == []
+            assert response.status_code == 200
+            assert response.json() == []
+            await menu_services.delete_all()
 
-    async def test_create_submenu(self, submenu_services, post_submenu, session_storage):
-        payload = MenuSchema(**post_submenu)
-        response = await submenu_services.create(session_storage["menu"]["id"], payload)
-        assert payload.compare_fields(response.model_dump(), ['title', 'description'])
-        session_storage['submenu'] = response.model_dump()
+    async def test_create_submenu(self, post_submenu, post_menu, menu_services, submenu_services):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            await menu_services.delete_all()
+            menu_db = await menu_services.create(MenuSchema(**post_menu))
+            payload = MenuSchema(**post_submenu, parent_id=menu_db.id)
+            response = await ac.post(f'/menus/{menu_db.id}/submenus/',
+                                     json=payload.model_dump())
 
-    async def test_list_submenus_after_create(self, submenu_services, session_storage):
-        response = await submenu_services.find_all(session_storage['menu']['id'])
-        assert response != []
+            submenu_id = response.json()['id']
+            submenu_db = await submenu_services.find(menu_db.id, submenu_id)
 
-    async def test_get_submenu(self, submenu_services, session_storage):
-        response = await submenu_services.find(session_storage['menu']['id'], session_storage['submenu']['id'])
-        assert MenuResponseSchema(**session_storage['submenu']).compare_fields(response.model_dump(),
-                                                                               fields=['title', 'description']) == True
+            assert response.status_code == 201, "incorrect response status code. waiting 201"
+            assert submenu_db.id is not None, "submenu's id is absent in DB"
+            assert submenu_db.id == UUID(submenu_id), "unexpected submenu's id in DB"
+            assert submenu_db.title is not None, "submenu's title is absent in DB"
+            assert submenu_db.title == response.json()['title'], "unexpected submenu's id in DB"
+            assert submenu_db.title == post_submenu['title'], "submenu's title in request data mutated"
+            assert submenu_db.description is not None, "submenu's title is absent in DB"
+            assert submenu_db.description == response.json()['description'], "unexpected submenu's id in DB"
+            assert submenu_db.description == post_submenu['description'], "submenu's description in request data mutated"
+            assert submenu_db.dishes_count == 0, "created submenu's dishes_count value must be equal to 0"
 
-    async def test_update_submenu(self, submenu_services, update_submenu, session_storage):
-        payload = MenuUpdateSchema(**update_submenu)
-        response = await submenu_services.update(session_storage['menu']['id'], session_storage['submenu']['id'], payload)
-        assert payload.compare_fields(response.model_dump(), ['title', 'description']) == True
-        session_storage['submenu'] = response.model_dump()
+            try:
+                await submenu_services.create('00000000-0000-0000-0000-000000000000', MenuSchema(**post_submenu))
+                assert False
+            except HTTPException as exc:
+                assert exc.status_code == 400
+                assert exc.detail == "Can't create submenu in not existing menu"
 
-    async def test_get_submenu_after_update(self, submenu_services, session_storage):
-        response = await submenu_services.find(session_storage['menu']['id'], session_storage['submenu']['id'])
-        assert MenuResponseSchema(**session_storage['submenu']).compare_fields(response.model_dump(),
-                                                                               fields=['title', 'description']) == True
 
-    async def test_delete_submenu(self, submenu_services, session_storage):
-        response = await submenu_services.delete(session_storage['submenu']['id'])
-        assert response == {
-            "status": True,
-            "message": "The submenu has been deleted"
-        }
+            try:
+                await submenu_services.create(submenu_db.id, MenuSchema(**post_submenu))
+                assert False
+            except HTTPException as exc:
+                assert exc.status_code == 400
+                assert exc.detail == "Can't create submenu in not existing menu"
 
-        session_storage['submenu']['id'] = '00000000-0000-0000-0000-000000000000'
+            await menu_services.delete_all()
 
-    async def test_list_submenus_after_delete(self, submenu_services, session_storage):
-        response = await submenu_services.find_all(session_storage['menu']['id'])
-        assert response == []
+    async def test_list_submenu(self, post_menu, post_submenu, menu_services, submenu_services):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            await menu_services.delete_all()
 
-    async def test_get_submenu_after_delete(self, submenu_services, session_storage):
-        try:
-            response = await submenu_services.find(session_storage['menu']['id'], session_storage['submenu']['id'])
-            assert False
-        except HTTPException as exc:
-            assert exc.detail == 'submenu not found'
+            menu = await menu_services.create(MenuSchema(**post_menu))
+            submenu = await submenu_services.create(menu.id, MenuSchema(**post_submenu))
+            response = await ac.get(f"/menus/{menu.id}/submenus/")
 
-    async def test_delete_menu(self, menu_services, session_storage):
-        response = await menu_services.delete(session_storage['menu']['id'])
-        assert response == {
-            "status": True,
-            "message": "The menu has been deleted"
-        }
+            assert response.status_code == 200, "incorrect response status code. waiting 200"
+            assert response.json() != [], "List of submenus is not displayed"
+            assert len(response.json()) != 2, "menu in list of menu"
+            assert UUID(response.json()[0]['id']) == submenu.id, "menu was displayed instead of submenu"
 
-        session_storage['menu']['id'] = '00000000-0000-0000-0000-000000000000'
+            await menu_services.delete_all()
 
-    async def test_list_empty_menu_after_delete(self, menu_services):
-        response = await menu_services.find_all()
-        assert response == []
+    async def test_get_submenu(self, post_menu, post_submenu, menu_services, submenu_services):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            await menu_services.delete_all()
+
+            menu_db = await menu_services.create(MenuSchema(**post_menu))
+            submenu_db = await submenu_services.create(menu_db.id, MenuSchema(**post_submenu))
+            response = await ac.get(f"/menus/{menu_db.id}/submenus/{submenu_db.id}")
+
+            assert response.status_code == 200, "incorrect response status code. waiting 200"
+            assert response.json()['id'] is not None, "menu's id is absent in get response"
+            assert submenu_db.id == UUID(response.json()['id']), "unexpected submenu's id in get response"
+            assert response.json()['title'] is not None, "menu's title is absent in get response"
+            assert submenu_db.title == response.json()['title'], "unexpected submenu's id in get response"
+            assert response.json()['title'] == post_submenu['title'], "submenu's title in response data is mutated"
+
+            assert response.json()['description'] is not None, "menu's description is absent in get response"
+            assert submenu_db.description == response.json()['description'], "unexpected submenu's description in DB"
+            assert response.json()['description'] == post_submenu[
+                'description'], "submenu's description in response data is mutated"
+
+            assert submenu_db.dishes_count == 0, "submenu's dishes_count value must be equal to 0 in get response"
+
+
+            response_get_not_existing_submenu = await ac.get(f"/menus/3c6b8785-c06f-43b5-b700-1ff5436db9a8/submenus/439d26f9-f4bc-47d1-99de-f2b82f175a68")
+            assert response_get_not_existing_submenu.status_code == 404, "incorrect response status code. waiting 404"
+            assert response_get_not_existing_submenu.json() == {
+                'detail': 'submenu not found'}, "incorrect response detail. waiting: submenu not found"
+
+            await menu_services.delete_all()
+
+    async def test_update_submenu(self, post_menu, post_submenu, update_submenu, menu_services, submenu_services):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            await menu_services.delete_all()
+
+            menu_db = await menu_services.create(MenuSchema(**post_menu))
+            submenu_db = submenu_db = await submenu_services.create(menu_db.id, MenuSchema(**post_submenu))
+            payload = MenuUpdateSchema(**update_submenu)
+
+            response = await ac.patch(f"/menus/{menu_db.id}/submenus/{submenu_db.id}", json=payload.model_dump())
+            update_submenu_db = await submenu_services.find(menu_db.id, submenu_db.id)
+
+            assert response.status_code == 200, "incorrect response status code. waiting 200"
+            assert update_submenu_db.id is not None, "submenu's id is absent in DB"
+            assert update_submenu_db.id == submenu_db.id, "submenu's id in DB is changed"
+
+            assert update_submenu_db.title is not None, "menu's title is absent in DB"
+            assert update_submenu_db.title == response.json()['title'], "unexpected menu's title in DB"
+            assert update_submenu_db.title == update_submenu['title'], "menu's title in DB hasn't changed"
+
+            assert update_submenu_db.description is not None, "menu's description is absent in DB"
+            assert update_submenu_db.description == response.json()['description'], "unexpected menu's description in DB"
+            assert update_submenu_db.description == update_submenu['description'], "menu's description in DB hasn't changed"
+            assert update_submenu_db.dishes_count == 0, "menu's dishes_count value changed"
+            response_update_not_existing_submenu = await ac.patch(f"/menus/{menu_db.id}/submenus/00000000-0000-0000-0000-000000000000",
+                                                               json=payload.model_dump())
+
+            assert response_update_not_existing_submenu.status_code == 404, "incorrect response status code. waiting 404"
+            assert response_update_not_existing_submenu.json() == {
+                'detail': 'submenu not found'}, "incorrect response detail. waiting: submenu not found"
+
+        await menu_services.delete_all()
+
+    async def test_delete_submenu(self, post_menu, post_submenu, menu_services, submenu_services):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            await menu_services.delete_all()
+            menu_db = await menu_services.create(MenuSchema(**post_menu))
+            submenu_db = await submenu_services.create(menu_db.id, MenuSchema(**post_submenu))
+
+            response = await ac.delete(f"/menus/{menu_db.id}/submenus/{submenu_db.id}")
+
+            assert response.status_code == 200
+            assert response.json() == {
+                "status": True,
+                "message": "The submenu has been deleted"
+            }
+
+            try:
+                deleted_submenu_result_db = await submenu_services.find(menu_db.id, submenu_db.id)
+                assert False
+            except HTTPException as exc:
+                assert exc.status_code == 404, "incorrect response status code. waiting 404"
+                assert exc.detail == "submenu not found", "incorrect response detail. waiting: submenu not found"
+
+            assert await submenu_services.find_all(menu_db.id) == []
+        await menu_services.delete_all()

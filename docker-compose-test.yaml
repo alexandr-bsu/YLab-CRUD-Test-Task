@@ -4,6 +4,7 @@ services:
   pytest:
     build:
       context: .
+      dockerfile: Dockerfile
     container_name: pytest
     ports:
       - "8000:80"

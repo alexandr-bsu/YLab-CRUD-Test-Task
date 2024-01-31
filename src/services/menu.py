@@ -1,6 +1,7 @@
 from utils.repository import AbstractRepository
 from schemas.menu import MenuSchema, MenuUpdateSchema, MenuResponseSchema
 from fastapi.exceptions import HTTPException
+from sqlalchemy.exc import NoResultFound
 
 
 class MenuServices:
@@ -18,17 +19,20 @@ class MenuServices:
 
     async def find(self, menu_id):
         try:
+
             menu = await self.menu_repo.find(menu_id)
             return MenuResponseSchema(**menu)
         except IndexError:
+            print('menu not found!')
             raise HTTPException(status_code=404, detail='menu not found')
 
     async def update(self, menu_id, data: MenuUpdateSchema):
         try:
+
             menu_dict = data.model_dump()
             menu = await self.menu_repo.update(menu_id, menu_dict)
             return MenuResponseSchema(**menu)
-        except IndexError:
+        except NoResultFound:
             raise HTTPException(status_code=404, detail='menu not found')
 
     async def delete(self, menu_id):
@@ -37,3 +41,11 @@ class MenuServices:
                 "status": True,
                 "message": "The menu has been deleted"
             }
+
+    async def delete_all(self):
+
+        await self.menu_repo.delete_all()
+        return {
+            "status": True,
+            "message": "The menu has been deleted"
+        }
