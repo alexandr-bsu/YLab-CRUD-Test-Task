@@ -15,7 +15,7 @@ class DishServices:
         try:
             await self.submenu_repo.find(menu_id, submenu_id)
         except IndexError:
-            raise HTTPException(status_code=404, detail='dish can be added to submenu only')
+            raise HTTPException(status_code=400, detail='dish can be added to submenu only')
 
         dish_dict = data.model_dump()
         dish_dict['menu_id'] = submenu_id

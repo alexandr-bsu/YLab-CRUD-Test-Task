@@ -8,15 +8,23 @@ import pytest
 
 @pytest.mark.usefixtures('init_db_fixture')
 class TestCounters:
-    async def test_create_menu(self, post_menu, session_storage):
+
+    # Полный тест меню в tests/test_menu.py
+    async def test_create_menu(self, post_menu, menu_services, session_storage):
         async with AsyncClient(app=app, base_url="http://test") as ac:
             payload = MenuSchema(**post_menu)
             response = await ac.post("/menus/", json=payload.model_dump())
 
+            menu_id = response.json()['id']
+            menu_db = await menu_services.find(menu_id)
+
             assert response.status_code == 201
-            assert payload.compare_fields(response.json(), ['title', 'description']) == True
+            assert response.json()['title'] == post_menu['title']
+            assert response.json()['description'] == post_menu['description']
+
             session_storage['menu'] = response.json()
 
+    # Полный тест меню в tests/test_menu.py
     async def test_create_submenu(self, post_submenu, session_storage):
         async with AsyncClient(app=app, base_url="http://test") as ac:
             payload = MenuSchema(**post_submenu, parent_id=session_storage["menu"]["id"])
