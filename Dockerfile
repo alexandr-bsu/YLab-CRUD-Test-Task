@@ -11,6 +11,6 @@ RUN pip install -r requirements.txt
 COPY . .
 
 RUN chmod a+x docker/*.sh
-
+RUN sed -i -e 's/\r$//' docker/*.sh
 
 
