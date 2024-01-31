@@ -8,23 +8,25 @@ import pytest
 
 @pytest.mark.usefixtures('init_db_fixture')
 class TestCounters:
-
+    # Мы проверили что unit CRUD работает исправно, нас интересует только проверка вычислямых столбцов, поэтому смотрим response
     # Полный тест меню в tests/test_menu.py
+    # Полный тест подменю в tests/test_submenu.py
+    # Полный тест блюд в tests/test_dishes.py
+
     async def test_create_menu(self, post_menu, menu_services, session_storage):
         async with AsyncClient(app=app, base_url="http://test") as ac:
             payload = MenuSchema(**post_menu)
             response = await ac.post("/menus/", json=payload.model_dump())
 
-            menu_id = response.json()['id']
-            menu_db = await menu_services.find(menu_id)
-
             assert response.status_code == 201
+            assert response.json()['title'] is not None
+            assert response.json()['description'] is not None
             assert response.json()['title'] == post_menu['title']
             assert response.json()['description'] == post_menu['description']
-
+            assert response.json()['dishes_count'] == 0
+            assert response.json()['submenus_count'] == 0
             session_storage['menu'] = response.json()
 
-    # Полный тест меню в tests/test_menu.py
     async def test_create_submenu(self, post_submenu, session_storage):
         async with AsyncClient(app=app, base_url="http://test") as ac:
             payload = MenuSchema(**post_submenu, parent_id=session_storage["menu"]["id"])
@@ -33,7 +35,11 @@ class TestCounters:
                                      json=payload.model_dump())
 
             assert response.status_code == 201
-            assert payload.compare_fields(response.json(), ['title', 'description'])
+            assert response.json()['title'] is not None
+            assert response.json()['description'] is not None
+            assert response.json()['title'] == post_submenu['title']
+            assert response.json()['description'] == post_submenu['description']
+            assert response.json()['dishes_count'] == 0
 
             session_storage['submenu'] = response.json()
 
@@ -48,7 +54,10 @@ class TestCounters:
             )
 
             assert response.status_code == 201
-            assert payload.compare_fields(response.json(), ['title', 'description', 'price'])
+            assert response.json()['title'] is not None
+            assert response.json()['description'] is not None
+            assert response.json()['title'] == post_dish_1['title']
+            assert response.json()['description'] == post_dish_1['description']
 
             session_storage['dish_1'] = response.json()
 
@@ -63,7 +72,10 @@ class TestCounters:
             )
 
             assert response.status_code == 201
-            assert payload.compare_fields(response.json(), ['title', 'description', 'price'])
+            assert response.json()['title'] is not None
+            assert response.json()['description'] is not None
+            assert response.json()['title'] == post_dish_2['title']
+            assert response.json()['description'] == post_dish_2['description']
 
             session_storage['dish_2'] = response.json()
 
@@ -74,8 +86,6 @@ class TestCounters:
             assert response.status_code == 200
             assert response.json()['dishes_count'] == 2
             assert response.json()['submenus_count'] == 1
-            assert MenuResponseSchema(**session_storage['menu']).compare_fields(response.json(),
-                                                                                fields=['title', 'description']) == True
 
     async def test_submenu_counters(self, session_storage):
         async with AsyncClient(app=app, base_url="http://test") as ac:
@@ -85,9 +95,7 @@ class TestCounters:
 
             assert response.status_code == 200
             assert response.json()['dishes_count'] == 2
-            assert SubmenuResponseSchema(**session_storage['submenu']).compare_fields(response.json(),
-                                                                                      fields=['title',
-                                                                                              'description']) == True
+
 
     async def test_delete_submenu(self, session_storage):
         async with AsyncClient(app=app, base_url="http://test") as ac:
@@ -128,8 +136,7 @@ class TestCounters:
             assert response.status_code == 200
             assert response.json()['dishes_count'] == 0
             assert response.json()['submenus_count'] == 0
-            assert MenuResponseSchema(**session_storage['menu']).compare_fields(response.json(),
-                                                                                fields=['title', 'description']) == True
+
 
     async def test_delete_menu(self, session_storage):
         async with AsyncClient(app=app, base_url="http://test") as ac:

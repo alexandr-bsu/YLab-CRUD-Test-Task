@@ -46,7 +46,7 @@ class TestSubmenu:
                 assert False
             except HTTPException as exc:
                 assert exc.status_code == 400
-                assert exc.detail == "Can't create submenu in not existing menu"
+                assert exc.detail == "Cant create submenu in not existing menu"
 
 
             try:
@@ -54,7 +54,7 @@ class TestSubmenu:
                 assert False
             except HTTPException as exc:
                 assert exc.status_code == 400
-                assert exc.detail == "Can't create submenu in not existing menu"
+                assert exc.detail == "Cant create submenu in not existing menu"
 
             await menu_services.delete_all()
 

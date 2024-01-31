@@ -3,7 +3,7 @@ from repositories.menu import MenuRepository
 from services.menu import MenuServices
 from schemas.menu import MenuSchema, MenuUpdateSchema, SubmenuResponseSchema
 from fastapi.exceptions import HTTPException
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 
 
 class SubmenuServices:
@@ -15,10 +15,16 @@ class SubmenuServices:
         menu_dict['parent_id'] = menu_id
 
         try:
+            await MenuServices(MenuRepository()).find(menu_id)
+        except HTTPException:
+            raise HTTPException(detail="Cant create submenu in not existing menu", status_code=400)
+
+
+        try:
             menu = await self.submenu_repo.create_one(menu_dict)
             return SubmenuResponseSchema(**menu)
         except IntegrityError:
-            raise HTTPException(detail="Cant create submenu in not existing menu", status_code=404)
+            raise HTTPException(detail="Cant create submenu in not existing menu", status_code=400)
 
     async def find_all(self, menu_id):
         menus = await self.submenu_repo.find_all(parent_id=menu_id)
