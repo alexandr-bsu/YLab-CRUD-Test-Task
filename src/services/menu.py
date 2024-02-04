@@ -1,51 +1,39 @@
-from utils.repository import AbstractRepository
-from schemas.menu import MenuSchema, MenuUpdateSchema, MenuResponseSchema
-from fastapi.exceptions import HTTPException
-from sqlalchemy.exc import NoResultFound
+from repositories.abstract.AbstractCrud import AbstractCrud
+from repositories.menu import MenuSqlRepository
+from schemas.menu import MenuSchema, MenuUpdateSchema
+from services.abstract.AbstractCrudService import AbstractCrudService
+from .exceptions import raise_404
 
 
-class MenuServices:
-    def __init__(self, repo: AbstractRepository):
-        self.menu_repo = repo
+class MenuServices(AbstractCrudService):
+    def __init__(self, menu_repository: AbstractCrud = MenuSqlRepository()):
+        self.menu_repository: AbstractCrud = menu_repository
 
     async def create(self, data: MenuSchema):
-        menu_dict = data.model_dump()
-        menu = await self.menu_repo.create_one(menu_dict)
-        return MenuResponseSchema(**menu)
+        return await self.menu_repository.create(data, parent_id=None)
+
+    @raise_404('menu not found')
+    async def find(self, id):
+        return await self.menu_repository.find(id)
 
     async def find_all(self):
-        menus = await self.menu_repo.find_all()
-        return [MenuResponseSchema(**row) for row in menus]
+        return await self.menu_repository.find_all(parent_id=None)
 
-    async def find(self, menu_id):
-        try:
+    @raise_404('menu not found')
+    async def update(self, data: MenuUpdateSchema, id):
+        await self.menu_repository.find(id)
+        return await self.menu_repository.update(data, id)
 
-            menu = await self.menu_repo.find(menu_id)
-            return MenuResponseSchema(**menu)
-        except IndexError:
-            print('menu not found!')
-            raise HTTPException(status_code=404, detail='menu not found')
-
-    async def update(self, menu_id, data: MenuUpdateSchema):
-        try:
-
-            menu_dict = data.model_dump()
-            menu = await self.menu_repo.update(menu_id, menu_dict)
-            return MenuResponseSchema(**menu)
-        except NoResultFound:
-            raise HTTPException(status_code=404, detail='menu not found')
-
-    async def delete(self, menu_id):
-        await self.menu_repo.delete(menu_id)
-        return {
-                "status": True,
-                "message": "The menu has been deleted"
-            }
-
-    async def delete_all(self):
-
-        await self.menu_repo.delete_all()
+    async def delete(self, id):
+        await self.menu_repository.delete(id)
         return {
             "status": True,
             "message": "The menu has been deleted"
+        }
+
+    async def delete_all(self):
+        await self.menu_repository.delete_all(parent_id=None)
+        return {
+            "status": True,
+            "message": "All menu have been deleted"
         }

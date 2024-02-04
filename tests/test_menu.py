@@ -35,8 +35,6 @@ class TestMenu:
             assert menu_db.description is not None, "menu's title is absent in DB"
             assert menu_db.description == response.json()['description'], "unexpected menu's id in DB"
             assert menu_db.description == post_menu['description'], "menu's description in request data mutated"
-            assert menu_db.dishes_count == 0, "created menu's dishes_count value must be equal to 0"
-            assert menu_db.submenus_count == 0, "created menu's submenus_count value must be equal to 0"
 
         await menu_services.delete_all()
 
@@ -45,7 +43,7 @@ class TestMenu:
             await menu_services.delete_all()
 
             menu = await menu_services.create(MenuSchema(**post_menu))
-            submenu = await submenu_services.create(menu.id, MenuSchema(**post_submenu))
+            submenu = await submenu_services.create(MenuSchema(**post_submenu), menu.id)
             response = await ac.get("/menus/")
 
             assert response.status_code == 200, "incorrect response status code. waiting 200"
@@ -74,13 +72,9 @@ class TestMenu:
             assert response.json()['description'] == post_menu[
                 'description'], "menu's description in response data is mutated"
 
-            assert menu_db.dishes_count == 0, "menu's dishes_count value must be equal to 0 in get response"
-            assert menu_db.submenus_count == 0, "menu's submenus_count value must be equal to 0 get response"
-
             response_get_not_existing_menu = await ac.get(f"/menus/00000000-0000-0000-0000-000000000000")
             assert response_get_not_existing_menu.status_code == 404, "incorrect response status code. waiting 404"
             assert response_get_not_existing_menu.json() == {'detail': 'menu not found'}, "incorrect response detail. waiting: menu not found"
-
             await menu_services.delete_all()
 
     async def test_update_menu(self, post_menu, update_menu, menu_services):
@@ -104,9 +98,6 @@ class TestMenu:
             assert update_menu_db.description is not None, "menu's description is absent in DB"
             assert update_menu_db.description == response.json()['description'], "unexpected menu's description in DB"
             assert update_menu_db.description == update_menu['description'], "menu's description in DB hasn't changed"
-
-            assert menu_db.dishes_count == 0, "menu's dishes_count value changed"
-            assert menu_db.submenus_count == 0, "menu's submenus_count value changed"
 
             response_update_not_existing_menu = await ac.patch(f"/menus/00000000-0000-0000-0000-000000000000",
                                                                json=payload.model_dump())

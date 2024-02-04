@@ -13,8 +13,9 @@ class TestDish:
     async def test_list_empty_dishes(self, post_menu, post_submenu, menu_services, submenu_services):
         async with AsyncClient(app=app, base_url="http://test") as ac:
             await menu_services.delete_all()
+
             menu_db = await menu_services.create(MenuSchema(**post_menu))
-            submenu_db = await submenu_services.create(menu_db.id, MenuSchema(**post_menu))
+            submenu_db = await submenu_services.create(MenuSchema(**post_submenu), menu_db.id)
 
             response = await ac.get(f'/menus/{menu_db.id}/submenus/{submenu_db.id}/dishes/')
 
@@ -26,14 +27,15 @@ class TestDish:
         async with AsyncClient(app=app, base_url="http://test") as ac:
             await menu_services.delete_all()
             menu_db = await menu_services.create(MenuSchema(**post_menu))
-            submenu_db = await submenu_services.create(menu_db.id, MenuSchema(**post_submenu))
+            submenu_db = await submenu_services.create(MenuSchema(**post_submenu), menu_db.id)
 
             payload = DishSchema(**post_dish_1, menu_id=submenu_db.id)
             response = await ac.post(f'/menus/{menu_db.id}/submenus/{submenu_db.id}/dishes/',
                                      json=payload.model_dump())
 
             dish_id = response.json()['id']
-            dish_db = await dish_services.find(submenu_db.id, dish_id)
+            dish_db = await dish_services.find(dish_id, submenu_db.id, menu_db.id)
+
 
             assert response.status_code == 201, "incorrect response status code. waiting 201"
             assert dish_db.id is not None, "dish's id is absent in DB"
@@ -49,18 +51,18 @@ class TestDish:
             assert dish_db.price == post_dish_1['price'], "submenu's dish price in request data mutated"
 
             try:
-                await dish_services.create('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000000000', DishSchema(**post_dish_1))
+                await dish_services.create(DishSchema(**post_dish_1), '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000')
                 assert False
             except HTTPException as exc:
                 assert exc.status_code == 400
-                assert exc.detail == "dish can be added to submenu only"
+                assert exc.detail == "It\'s impossible to create dish. Check menu\'s id or submenu\'s id"
 
             try:
-                await dish_services.create(menu_db.id, menu_db.id, DishSchema(**post_dish_1))
+                await dish_services.create(DishSchema(**post_dish_1), menu_db.id, menu_db.id)
                 assert False
             except HTTPException as exc:
                 assert exc.status_code == 400
-                assert exc.detail == "dish can be added to submenu only"
+                assert exc.detail == "It\'s impossible to create dish. Check menu\'s id or submenu\'s id"
 
             await menu_services.delete_all()
 
@@ -69,10 +71,10 @@ class TestDish:
             await menu_services.delete_all()
 
             menu = await menu_services.create(MenuSchema(**post_menu))
-            submenu = await submenu_services.create(menu.id, MenuSchema(**post_submenu))
-            dish = await dish_services.create(menu.id, submenu.id, DishSchema(**post_dish_1))
+            submenu = await submenu_services.create(MenuSchema(**post_submenu), menu.id)
+            dish = await dish_services.create(DishSchema(**post_dish_1), submenu.id, menu.id)
 
-            response = await ac.get(f"/menus/{menu.id}/submenus/")
+            response = await ac.get(f"/menus/{menu.id}/submenus/{submenu.id}/dishes/")
 
             assert response.status_code == 200, "incorrect response status code. waiting 200"
             assert response.json() != [], "List of dishes is not displayed"
@@ -84,8 +86,8 @@ class TestDish:
             await menu_services.delete_all()
 
             menu_db = await menu_services.create(MenuSchema(**post_menu))
-            submenu_db = await submenu_services.create(menu_db.id, MenuSchema(**post_submenu))
-            dish_db = await dish_services.create(menu_db.id, submenu_db.id, DishSchema(**post_dish_1))
+            submenu_db = await submenu_services.create(MenuSchema(**post_submenu), menu_db.id)
+            dish_db = await dish_services.create(DishSchema(**post_dish_1), submenu_db.id, menu_db.id)
 
             response = await ac.get(f"/menus/{menu_db.id}/submenus/{submenu_db.id}/dishes/{dish_db.id}")
 
@@ -117,13 +119,13 @@ class TestDish:
             await menu_services.delete_all()
 
             menu_db = await menu_services.create(MenuSchema(**post_menu))
-            submenu_db = submenu_db = await submenu_services.create(menu_db.id, MenuSchema(**post_submenu))
-            dish_db = await dish_services.create(menu_db.id, submenu_db.id, DishSchema(**post_dish_1))
+            submenu_db = await submenu_services.create(MenuSchema(**post_submenu), menu_db.id)
+            dish_db = await dish_services.create(DishSchema(**post_dish_1), submenu_db.id, menu_db.id)
 
             payload = DishSchema(**update_dish_1)
 
             response = await ac.patch(f"/menus/{menu_db.id}/submenus/{submenu_db.id}/dishes/{dish_db.id}", json=payload.model_dump())
-            update_dish_db = await dish_services.find(submenu_db.id, dish_db.id)
+            update_dish_db = await dish_services.find(dish_db.id, submenu_db.id, menu_db.id)
 
             assert response.status_code == 200, "incorrect response status code. waiting 200"
             assert update_dish_db.id is not None, "dish's id is absent in DB"
@@ -155,8 +157,8 @@ class TestDish:
             await menu_services.delete_all()
 
             menu_db = await menu_services.create(MenuSchema(**post_menu))
-            submenu_db = submenu_db = await submenu_services.create(menu_db.id, MenuSchema(**post_submenu))
-            dish_db = await dish_services.create(menu_db.id, submenu_db.id, DishSchema(**post_dish_1))
+            submenu_db = await submenu_services.create(MenuSchema(**post_submenu), menu_db.id)
+            dish_db = await dish_services.create(DishSchema(**post_dish_1), submenu_db.id, menu_db.id)
 
             response = await ac.delete(f"/menus/{menu_db.id}/submenus/{submenu_db.id}/dishes/{dish_db.id}")
 
@@ -167,7 +169,7 @@ class TestDish:
             }
 
             try:
-                deleted_dish_result_db = await dish_services.find(submenu_db.id, dish_db.id)
+                deleted_dish_result_db = await dish_services.find(dish_db.id, submenu_db.id, menu_db.id)
                 assert False
             except HTTPException as exc:
                 assert exc.status_code == 404, "incorrect response status code. waiting 404"

@@ -8,21 +8,17 @@ from src.services.menu import MenuServices
 from src.services.submenu import SubmenuServices
 from src.services.dish import DishServices
 
-from src.repositories.menu import MenuRepository
-from src.repositories.submenu import SubmenuRepository
-from src.repositories.dish import DishRepository
-
 @pytest.fixture(scope="session")
 async def dish_services():
-    yield DishServices(DishRepository())
+    yield DishServices()
 
 @pytest.fixture(scope="session")
 async def menu_services():
-    yield MenuServices(MenuRepository())
+    yield MenuServices()
 
 @pytest.fixture(scope="session")
 async def submenu_services():
-    yield SubmenuServices(SubmenuRepository())
+    yield SubmenuServices()
 
 
 # fix problem "different event loop"

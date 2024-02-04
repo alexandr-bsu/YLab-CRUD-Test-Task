@@ -1,57 +1,71 @@
-from utils.repository import AbstractRepository
-from schemas.dish import *
-from fastapi.exceptions import HTTPException
-from repositories.submenu import SubmenuRepository
+from repositories.abstract.AbstractCrud import AbstractCrud
+from repositories.menu import MenuSqlRepository
+from repositories.submenu import SubmenuSqlRepository
+from repositories.dish import DishSqlRepository
+from schemas.dish import DishSchema, DishUpdateSchema
+from services.abstract.AbstractCrudService import AbstractCrudService
 from sqlalchemy.exc import NoResultFound
+from fastapi.exceptions import HTTPException
+from .exceptions import raise_404
 
+class DishServices(AbstractCrudService):
+    def __init__(self,
+                 dish_repository: AbstractCrud = DishSqlRepository(),
+                 submenu_repository: AbstractCrud = SubmenuSqlRepository(),
+                 menu_repository: AbstractCrud = MenuSqlRepository()):
 
+        self.dish_repository: AbstractCrud = dish_repository
+        self.submenu_repository: AbstractCrud = submenu_repository
+        self.menu_repository: AbstractCrud = menu_repository
 
-class DishServices:
-    def __init__(self, repo: AbstractRepository):
-        self.dish_repo = repo
-        self.submenu_repo = SubmenuRepository()
-
-    async def create(self, menu_id, submenu_id, data: DishSchema):
+    async def create(self, data: DishSchema, submenu_id, main_menu_id):
         try:
-            await self.submenu_repo.find(menu_id, submenu_id)
-        except IndexError:
-            raise HTTPException(status_code=400, detail='dish can be added to submenu only')
+            # Если меню с main_menu_id не существует, то вызываем исключение
+            await self.menu_repository.find(main_menu_id)
+            # Если подменю с submenu_id не существует, то вызываем ислючение
+            await self.submenu_repository.find(submenu_id)
 
-        dish_dict = data.model_dump()
-        dish_dict['menu_id'] = submenu_id
-        dish = await self.dish_repo.create_one(dish_dict)
-        return DishResponseSchema(**dish)
+        except NoResultFound:
+            raise HTTPException(
+                                status_code=400,
+                                detail='It\'s impossible to create dish. Check menu\'s id or submenu\'s id'
+                                )
+
+        result = await self.dish_repository.create(data, submenu_id)
+
+        return result
+
+    @raise_404('dish not found')
+    async def find(self, id, submenu_id, main_menu_id):
+        # Если меню с main_menu_id не существует то вызывается исключение HTTPException c кодом 404
+        await self.menu_repository.find(main_menu_id)
+        # Если меню с submenu_id не существует то вызывается исключение HTTPException c кодом 404
+        await self.submenu_repository.find(submenu_id)
+
+        return await self.dish_repository.find(id)
 
     async def find_all(self, submenu_id):
-        dishes = await self.dish_repo.find_all(submenu_id)
-        return [DishResponseSchema(**row) for row in dishes]
+        return await self.dish_repository.find_all(submenu_id)
 
-    async def find(self, submenu_id, dish_id):
-        try:
-            dish = await self.dish_repo.find(submenu_id, dish_id)
-            return DishResponseSchema(**dish)
-        except IndexError:
-            raise HTTPException(status_code=404, detail='dish not found')
+    @raise_404('dish not found')
+    async def update(self, data: DishUpdateSchema, id, submenu_id, main_menu_id):
+        # Если меню с main_menu_id не существует то вызывается исключение HTTPException c кодом 404
+        await self.menu_repository.find(main_menu_id)
+        # Если меню с submenu_id не существует то вызывается исключение HTTPException c кодом 404
+        await self.submenu_repository.find(submenu_id)
 
-    async def update(self, dish_id, data: DishUpdateSchema):
-        try:
-            dish_dict = data.model_dump()
-            dish = await self.dish_repo.update(dish_id, dish_dict)
-            return DishResponseSchema(**dish)
-        except NoResultFound:
-            raise HTTPException(status_code=404, detail='dish not found')
+        return await self.dish_repository.update(data, id)
 
-    async def delete(self, dish_id):
-        await self.dish_repo.delete(dish_id)
+    async def delete(self, id):
+        await self.dish_repository.delete(id)
         return {
-                "status": True,
-                "message": "The dish has been deleted"
-            }
+            'status': True,
+            'message': 'The dish has been deleted'
+        }
 
-
-    async def delete_all(self):
-        self.dish_repo.delete_all()
+    async def delete_all(self, submenu_id):
+        await self.dish_repository.delete_all(submenu_id)
         return {
-            "status": True,
-            "message": "All dishes have been deleted"
+            'status': True,
+            'message': 'All dishes have been deleted'
         }
