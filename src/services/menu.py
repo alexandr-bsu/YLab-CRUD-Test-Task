@@ -17,6 +17,7 @@ class MenuServices(AbstractCrudService):
         return await self.menu_repository.find(id)
 
     async def find_all(self):
+        print('service menu find_all')
         return await self.menu_repository.find_all(parent_id=None)
 
     @raise_404('menu not found')

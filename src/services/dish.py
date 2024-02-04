@@ -8,6 +8,7 @@ from sqlalchemy.exc import NoResultFound
 from fastapi.exceptions import HTTPException
 from .exceptions import raise_404
 
+
 class DishServices(AbstractCrudService):
     def __init__(self,
                  dish_repository: AbstractCrud = DishSqlRepository(),
@@ -44,6 +45,7 @@ class DishServices(AbstractCrudService):
 
         return await self.dish_repository.find(id)
 
+    # Добавить проверки на меню и подменю
     async def find_all(self, submenu_id):
         return await self.dish_repository.find_all(submenu_id)
 
@@ -56,6 +58,7 @@ class DishServices(AbstractCrudService):
 
         return await self.dish_repository.update(data, id)
 
+    # Добавить проверки на меню и подменю
     async def delete(self, id):
         await self.dish_repository.delete(id)
         return {
@@ -63,6 +66,7 @@ class DishServices(AbstractCrudService):
             'message': 'The dish has been deleted'
         }
 
+    # Добавить проверки на меню и подменю
     async def delete_all(self, submenu_id):
         await self.dish_repository.delete_all(submenu_id)
         return {

@@ -48,6 +48,8 @@ class TestSubmenu:
                 assert exc.status_code == 400
                 assert exc.detail == "Cant create submenu in not existing menu"
 
+            await menu_services.delete_all()
+
     async def test_list_submenu(self, post_menu, post_submenu, menu_services, submenu_services):
         async with AsyncClient(app=app, base_url="http://test") as ac:
             await menu_services.delete_all()

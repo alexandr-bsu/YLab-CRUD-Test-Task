@@ -1,4 +1,4 @@
-from src.schemas.menu import MenuSchema, MenuUpdateSchema, MenuResponseSchema
+from src.schemas.menu import MenuSchema, MenuUpdateSchema
 from httpx import AsyncClient
 from main import app
 from fastapi.exceptions import HTTPException

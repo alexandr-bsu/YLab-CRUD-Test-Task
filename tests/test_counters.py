@@ -137,7 +137,6 @@ class TestCounters:
             assert response.json()['dishes_count'] == 0
             assert response.json()['submenus_count'] == 0
 
-
     async def test_delete_menu(self, session_storage):
         async with AsyncClient(app=app, base_url="http://test") as ac:
             response = await ac.delete(f"/menus/{session_storage['menu']['id']}")

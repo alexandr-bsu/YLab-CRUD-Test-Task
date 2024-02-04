@@ -47,7 +47,7 @@ services:
     container_name: ylab_api_test
     command: [ "/fastapi_app/docker/app_test.sh" ]
     ports:
-      - 8001:8765
+      - 8003:8765
     depends_on:
       db_test:
         condition: service_healthy

@@ -4,21 +4,27 @@ from src.config import settings, Mode
 from src.database import init_db
 import asyncio
 
-from src.services.menu import MenuServices
-from src.services.submenu import SubmenuServices
-from src.services.dish import DishServices
+# from src.services.menu import MenuServices
+# from src.services.submenu import SubmenuServices
+# from src.services.dish import DishServices
+
+from src.cache.menu_services import MenuServicesCache
+from src.cache.submenu_services import SubmenuServicesCache
+from src.cache.dish_services import DishServicesCache
 
 @pytest.fixture(scope="session")
 async def dish_services():
-    yield DishServices()
+    yield DishServicesCache()
+
 
 @pytest.fixture(scope="session")
 async def menu_services():
-    yield MenuServices()
+    yield MenuServicesCache()
+
 
 @pytest.fixture(scope="session")
 async def submenu_services():
-    yield SubmenuServices()
+    yield SubmenuServicesCache()
 
 
 # fix problem "different event loop"
@@ -30,6 +36,7 @@ def event_loop(request):
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+
 
 @pytest.fixture(scope="session", autouse=True)
 async def init_db_fixture():
@@ -45,12 +52,14 @@ def post_menu():
         'description': 'Menu 1 description'
     }
 
+
 @pytest.fixture(scope='session')
 def update_menu():
     return {
-            'title': 'Updated menu 1',
-            'description': 'Updated menu 1 description'
-        }
+        'title': 'Updated menu 1',
+        'description': 'Updated menu 1 description'
+    }
+
 
 @pytest.fixture(scope='session')
 def post_submenu():
@@ -66,6 +75,7 @@ def update_submenu():
         'title': 'Updated submenu 1',
         'description': 'Updated submenu 1 description'
     }
+
 
 @pytest.fixture(scope='session')
 def post_dish_1():
@@ -107,4 +117,3 @@ def update_dish_2():
 @pytest.fixture(scope='session')
 def session_storage():
     return {}
-
