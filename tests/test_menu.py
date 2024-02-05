@@ -16,10 +16,12 @@ class TestMenu:
             assert response.status_code == 200
             assert response.json() == []
 
-    async def test_create_menu(self, post_menu, menu_services):
         await menu_services.delete_all()
 
+    async def test_create_menu(self, post_menu, menu_services):
         async with AsyncClient(app=app, base_url="http://test") as ac:
+
+            await menu_services.delete_all()
             payload = MenuSchema(**post_menu).model_dump()
             response = await ac.post("/menus/", json=payload)
             menu_id = response.json()['id']
@@ -36,7 +38,7 @@ class TestMenu:
             assert menu_db.description == response.json()['description'], "unexpected menu's id in DB"
             assert menu_db.description == post_menu['description'], "menu's description in request data mutated"
 
-        await menu_services.delete_all()
+            await menu_services.delete_all()
 
     async def test_list_menu(self, post_menu, post_submenu, menu_services, submenu_services):
         async with AsyncClient(app=app, base_url="http://test") as ac:

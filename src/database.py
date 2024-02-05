@@ -3,7 +3,7 @@ from sqlalchemy.orm import DeclarativeBase
 from config import settings
 from redis import asyncio as aioredis
 
-redis_client = aioredis.Redis()
+redis_client = aioredis.Redis.from_url(settings.redis.REDIS_URL)
 
 async_engine = create_async_engine(settings.db.DB_URL_ASYNCPG, echo=True)
 async_session = async_sessionmaker(async_engine, expire_on_commit=False)

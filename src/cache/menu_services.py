@@ -10,7 +10,7 @@ class MenuServicesCache(AbstractCrudService):
 
     async def create(self, data):
         menu = await self.menu_services.create(data)
-        await redis_client.delete(f'menu_menu_id:{menu.id}')
+        await redis_client.delete(f'menu_list')
         return menu
 
     async def find_all(self):
@@ -45,9 +45,5 @@ class MenuServicesCache(AbstractCrudService):
         return await self.menu_services.delete(id)
 
     async def delete_all(self):
-        await redis_client.delete(f'menu_*')
-        await redis_client.delete(f'submenu_*')
-        await redis_client.delete(f'dish_*')
-        await redis_client.delete('menu_list')
-
+        await redis_client.delete('*')
         return await self.menu_services.delete_all()

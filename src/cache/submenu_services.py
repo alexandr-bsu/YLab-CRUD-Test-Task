@@ -12,7 +12,7 @@ class SubmenuServicesCache(AbstractCrudService):
     async def create(self, data, menu_id):
         submenu = await self.submenu_services.create(data, menu_id)
         await redis_client.delete(f'menu_menu_id:{menu_id}')
-        await redis_client.delete(f'submenu_menu_id:{menu_id}_submenu_id:{submenu.id}')
+        await redis_client.delete(f'submenu_menu_id:{menu_id}')
         return submenu
 
     async def find_all(self, menu_id):
