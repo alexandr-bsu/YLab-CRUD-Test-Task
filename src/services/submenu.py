@@ -8,6 +8,7 @@ from .exceptions import raise_404, raise_400
 from sqlalchemy.exc import NoResultFound
 from fastapi.exceptions import HTTPException
 
+
 class SubmenuServices(AbstractCrudService):
     def __init__(self, submenu_repository: AbstractCrudRepo = SubmenuSqlRepository(),
                  menu_repository: AbstractCrudRepo = MenuSqlRepository()):

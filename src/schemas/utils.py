@@ -22,5 +22,3 @@ def partial_model(model: Type[BaseModel]):
             for field_name, field_info in model.model_fields.items()
         }
     )
-
-

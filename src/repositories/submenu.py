@@ -5,6 +5,7 @@ from sqlalchemy import select, func
 from models.dish import Dish
 from models.menu import Menu
 
+
 def find_submenu_query(**filter_by):
     query = (
         select(Menu.id,
@@ -12,11 +13,12 @@ def find_submenu_query(**filter_by):
                Menu.description,
                func.count(Dish.id).label('dishes_count'))
         .filter_by(**filter_by)
-        .filter(Menu.parent_id != None)
+        .filter(Menu.parent_id.is_not(None))
         .outerjoin(Dish, Dish.menu_id == Menu.id)
         .group_by(Menu.id)
     )
     return query
+
 
 def find_all_submenu_query(parent_id, **filter_by):
     query = find_submenu_query(**filter_by).filter(Menu.parent_id == parent_id)
@@ -46,6 +48,3 @@ class SubmenuSqlRepository(AbstractCrud, ABC):
 
     async def delete_all(self, parent_id):
         await self.repo_engine.delete(parent_id=parent_id)
-
-
-

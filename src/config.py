@@ -3,8 +3,6 @@ from pydantic import Field
 from enum import Enum
 import os
 
-
-
 DOCKER_MODE = os.getenv("MODE")
 DOTENV = os.path.join(os.path.dirname(__file__), "../.test.env")
 
@@ -13,7 +11,6 @@ if DOCKER_MODE == 'DEV':
 
 if DOCKER_MODE == 'TEST':
     DOTENV = os.path.join(os.path.dirname(__file__), "../.test.env")
-
 
 
 class DbSettings(BaseSettings):
@@ -37,7 +34,6 @@ class DbSettings(BaseSettings):
 class RedisSettings(BaseSettings):
     REDIS_HOST: str = Field(default='localhost')
 
-
     @property
     def REDIS_URL(self):
         return f'redis://{self.REDIS_HOST}:6379/'
@@ -45,11 +41,11 @@ class RedisSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=DOTENV, extra='ignore')
 
 
-
 # Режимы работы приложения
 class Mode(Enum):
     DEV = 'DEV'
     TEST = 'TEST'
+
 
 class Settings(BaseSettings):
     db: DbSettings = DbSettings()

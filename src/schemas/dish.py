@@ -31,6 +31,8 @@ class DishSchema(BaseModel):
             if model_dict.get(field) != other.get(field):
                 return False
             return True
+
+
 class DishResponseSchema(DishSchema):
     id: UUID
     price: str

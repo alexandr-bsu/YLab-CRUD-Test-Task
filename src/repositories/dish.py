@@ -26,5 +26,3 @@ class DishSqlRepository(AbstractCrud, ABC):
 
     async def delete_all(self, menu_id):
         return await self.repo_engine.delete(menu_id=menu_id)
-
-

@@ -1,7 +1,6 @@
 from fastapi.routing import APIRouter
 from schemas.menu import MenuSchema, MenuResponseSchema, MenuUpdateSchema
 from cache.menu_services import MenuServicesCache
-from services.menu import MenuServices
 from typing import List
 from uuid import UUID
 

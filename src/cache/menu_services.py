@@ -10,7 +10,7 @@ class MenuServicesCache(AbstractCrudService):
 
     async def create(self, data):
         menu = await self.menu_services.create(data)
-        await redis_client.delete(f'menu_list')
+        await redis_client.delete('menu_list')
         return menu
 
     async def find_all(self):

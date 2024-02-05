@@ -17,7 +17,7 @@ def find_menu_query(**filter_by):
              .filter_by(**filter_by)
              .outerjoin(submenu, Menu.id == submenu.parent_id)
              .outerjoin(Dish, Dish.menu_id == submenu.id)
-             .filter(Menu.parent_id == None)
+             .filter(Menu.parent_id.is_(None))
              .group_by(Menu.id))
     return query
 
@@ -45,7 +45,3 @@ class MenuSqlRepository(AbstractCrud):
 
     async def delete_all(self, parent_id=None):
         await self.repo_engine.delete()
-
-
-
-

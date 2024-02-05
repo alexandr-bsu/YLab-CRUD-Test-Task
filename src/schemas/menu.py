@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field, ConfigDict
 from uuid import UUID
 from .utils import partial_model
+
+
 class MenuSchema(BaseModel):
     title: str = Field(min_length=1)
     description: str = Field(min_length=1)
@@ -19,9 +21,11 @@ class MenuSchema(BaseModel):
 
             return True
 
+
 class SubmenuResponseSchema(MenuSchema):
     id: UUID
     dishes_count: int = 0
+
 
 class MenuResponseSchema(SubmenuResponseSchema):
     submenus_count: int = 0
@@ -30,4 +34,3 @@ class MenuResponseSchema(SubmenuResponseSchema):
 @partial_model
 class MenuUpdateSchema(MenuSchema):
     ...
-

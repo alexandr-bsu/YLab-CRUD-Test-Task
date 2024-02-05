@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
 
+
 class AbstractRepository(ABC):
     @abstractmethod
     async def create(self, data: BaseModel, custom_query=None, **extra_params) -> dict:
@@ -11,7 +12,7 @@ class AbstractRepository(ABC):
         :param extra_params: данные для колонок, которые не указаны в модели из data
         :returns: Объект с данными, содержащиеся в созданной записи БД
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @abstractmethod
     async def find_all(self, custom_query=None, **filters) -> dict:
@@ -21,7 +22,7 @@ class AbstractRepository(ABC):
         :param filters: фильтры по колонкам
         :returns: Объект с данными, содержащиеся в полученных записях БД
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @abstractmethod
     async def find(self, custom_query=None, **filters) -> dict:
@@ -31,7 +32,7 @@ class AbstractRepository(ABC):
         :param filters: фильтры по колонкам
          :returns: Объект с данными, содержащиеся в полученной записи БД
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @abstractmethod
     async def update(self, data: BaseModel, custom_query=None, **filters) -> dict:
@@ -42,7 +43,7 @@ class AbstractRepository(ABC):
         :param filters: фильтры по колонкам
          :returns: Объект с данными, содержащиеся в обновлённой записи БД
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @abstractmethod
     async def delete(self, custom_query=None, **filters) -> dict:
@@ -51,6 +52,4 @@ class AbstractRepository(ABC):
         :param custom_query: запрос, который вызывается вместо реализованого по-умолчанию
         :param filters: фильтры по колонкам
         """
-        raise NotImplemented
-
-
+        raise NotImplementedError
