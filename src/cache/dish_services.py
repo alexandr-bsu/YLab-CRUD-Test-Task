@@ -45,8 +45,8 @@ class DishServicesCache(AbstractCrudService):
         await redis_client.delete(f'dish_menu_id:{menu_id}_submenu_id:{submenu_id}_dish_id:{id}')
         return await self.dish_services.delete(id)
 
-    async def delete_all(self, menu_id):
+    async def delete_all(self, id, submenu_id, menu_id):
         await redis_client.delete(f'menu_id:{menu_id}')
-        await redis_client.delete(f'submenu_menu_id:{menu_id}_*')
-        await redis_client.delete(f'dish_menu_id:{menu_id}_*')
+        await redis_client.delete(f'submenu_menu_id:{menu_id}_submenu_id:{submenu_id}')
+        await redis_client.delete(f'dish_menu_id:{menu_id}_submenu_id:{submenu_id}_*')
         return await self.dish_services.delete_all(menu_id)
