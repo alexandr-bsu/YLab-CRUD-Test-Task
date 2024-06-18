@@ -11,6 +11,7 @@ class SubmenuServicesCache(AbstractCrudService):
 
     async def create(self, data, menu_id):
         submenu = await self.submenu_services.create(data, menu_id)
+        # Invalid menu's cache, cause of new submenu was added
         await redis_client.delete(f'menu_menu_id:{menu_id}')
         await redis_client.delete(f'submenu_menu_id:{menu_id}')
         return submenu
@@ -38,6 +39,8 @@ class SubmenuServicesCache(AbstractCrudService):
         return result
 
     async def delete(self, id, menu_id):
+        # TODO: Add menu_list cache invalidating
+        await redis_client.delete(f'menu_list')
         await redis_client.delete(f'menu_menu_id:{menu_id}')
         await redis_client.delete(f'submenu_menu_id:{menu_id}_submenu_id:{id}')
         await redis_client.delete(f'dish_menu_id:{menu_id}_submenu_id:{id}_*')
